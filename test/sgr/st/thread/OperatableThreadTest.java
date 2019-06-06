@@ -1,4 +1,4 @@
-package sgr.st.thread.test;
+package sgr.st.thread;
 
 import java.awt.Button;
 import java.awt.Frame;
@@ -7,8 +7,6 @@ import java.awt.Label;
 import java.awt.Panel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
-import sgr.st.thread.lib.OperatableThread;
 
 public class OperatableThreadTest extends Frame implements ActionListener{
 

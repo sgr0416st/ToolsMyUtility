@@ -1,4 +1,4 @@
-package sgr.st.thread.lib;
+package sgr.st.thread;
 
 public abstract class OperatableThread extends Thread {
 	private boolean end;

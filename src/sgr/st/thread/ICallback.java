@@ -1,4 +1,4 @@
-package sgr.st.thread.lib;
+package sgr.st.thread;
 
 /**
  * @author satousuguru
