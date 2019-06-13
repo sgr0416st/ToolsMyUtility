@@ -1,5 +1,7 @@
 package sgr.st.thread;
 
+import sgr.st.thread.exception.AbortTaskException;
+
 /**
  * このクラスは、繰り返し処理をするスレッドの抽象モデルです。
  * 何らかの繰り返し期間が定まっていない何らかの繰り返し処理をする場合、このモデルを継承すると便利です。
@@ -29,12 +31,19 @@ public abstract class RepeatedTaskThread implements Runnable{
 	@Override
 	public final void run() {
 		doBeforeTask();
+		doRightBeforeRepeatedTask();
 
 		while(!this.isStopped){
-			doRepeatedTask();
+			try {
+				doRepeatedTask();
+			} catch (InterruptedException e) {
+				whenAbort();
+			}
 		}
 
+		doRightAfterRepeatedTask();
 		doAfterTask();
+		close();
 	}
 
 	/**
@@ -45,11 +54,24 @@ public abstract class RepeatedTaskThread implements Runnable{
 	protected abstract void doBeforeTask();
 
 	/**
+	 *  dobeforeTaskが終了した後、繰り返し実行されるタスクが始まる直前にこのメソッドが呼ばれます。
+	 *  時間がかからず、直ちに終了する処理が存在する場合はオーバーライドしたこのメソッドの中で実行してください。
+	 */
+	protected void doRightBeforeRepeatedTask(){}
+
+	/**
 	 * 繰り返し実行するタスクを記述してください。
 	 * ここで記述されたタスクは原則的に、stopThread()が呼び出されるまで繰り返し実行されます。
+	 *
+	 * @throws AbortTaskException stopThreadNow()メソッドが呼び出された時
 	 */
-	protected abstract void doRepeatedTask();
+	protected abstract void doRepeatedTask() throws AbortTaskException;
 
+	/**
+	 *  stopThread()によってタスクが終了した直後にこのメソッドが呼ばれます。
+	 *  時間がかからず、直ちに終了する処理が存在する場合はオーバーライドしたこのメソッドの中で実行してください。
+	 */
+	protected void doRightAfterRepeatedTask(){}
 
 	/**
 	 * stopThread()が呼ばれ、繰り返し実行されるタスクを終了した後にこのメソッドが呼び出されます。
@@ -65,11 +87,34 @@ public abstract class RepeatedTaskThread implements Runnable{
 	protected abstract void close();
 
 	/**
-	 * このスレッドを停止させます。この関数を外部のスレッドから呼び出すことで、このスレッドを停止させることができます。
+	 * このスレッドに対して停止要求を出します。
+	 * このスレッドは停止要求を受けた後は、現在実行しているタスクが終了すると次のタスクを繰り返さずに、
+	 * 事後処理へ向かいます。呼び出し時に実行中のタスクは中断しません。
 	 */
 	public void stopThread() {
 		isStopped  = true;
 	}
+
+	/**
+	 * このスレッドに対して即時停止要求を出します。
+	 * このスレッドはこの要求を受けた後、AbortTaskExceptionを発行して直ちに実行しているタスクの終了を試みます。
+	 * なお、doRepeatedTask()の実装によっては直ちに終了しない可能性があります。
+	 * タスクが終了した後は、whenAbort()を呼び出して例外処理を行った後、事後処理へ向かいます。
+	 *
+	 * @throws AbortTaskException InterruptExeptionを継承した自作例外です。
+	 * この関数は常に、このスレッドに対して即時終了要求を発行します。
+	 *
+	 */
+	public void stopThreadNow() throws AbortTaskException{
+		this.stopThread();
+		throw new AbortTaskException("call : stopThreadNow");
+	}
+
+	/**
+	 * stopThreadNow()によって即時停止要求の例外を発行した後の後処理をするメソッドです。
+	 * 即時停止後に特別な処理をする必要がある場合は、このメソッドをオーバーライドしてください。
+	 */
+	public void whenAbort() {}
 
 	/**
 	 * このスレッドが外部から停止命令を受けているかどうかを返します。
