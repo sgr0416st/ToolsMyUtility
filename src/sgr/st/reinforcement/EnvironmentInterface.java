@@ -6,5 +6,7 @@ public interface EnvironmentInterface<T> {
 
 	public abstract ObservationInterface step(ActionInterface<T> action);
 
+	public abstract void close();
+
 
 }
